@@ -1,30 +1,28 @@
-# 확인필요
-
 class UNet(nn.Module):
     def __init__(self):
-        super(CNN, self).__init__()
+        super(UNet, self).__init__()
         
         self.pool = nn.MaxPool2d(2, 2)
         
-        self.Conv1 = nn.Sequential(
+        self.Conv1 = nn.Sequential( # -> a
         nn.Conv2d(1, 64, 3),
         nn.ReLU(),
         nn.Conv2d(64, 64, 3),
         nn.ReLU())
         
-        self.Conv2 = nn.Sequential(
+        self.Conv2 = nn.Sequential( # -> b
         nn.Conv2d(64, 128, 3),
         nn.ReLU(),
         nn.Conv2d(128, 128, 3),
         nn.ReLU())
         
-        self.Conv3 = nn.Sequential(
+        self.Conv3 = nn.Sequential( # -> c
         nn.Conv2d(128, 256, 3),
         nn.ReLU(),
         nn.Conv2d(256, 256, 3),
         nn.ReLU())
         
-        self.Conv4 = nn.Sequental(
+        self.Conv4 = nn.Sequential( # -> d
         nn.Conv2d(256, 512, 3),
         nn.ReLU(),
         nn.Conv2d(512, 512, 3),
@@ -67,41 +65,49 @@ class UNet(nn.Module):
         nn.ReLU(),
         nn.Conv2d(64, 64, 3),
         nn.ReLU(),
-        nn.Conv2d(64, 2, 1))
+        nn.Conv2d(64, 1, 1),
+        nn.Sigmoid())
         
+    def crop(self, x, output_size):
+        transform = CenterCrop(output_size)
+        return transform(x)
         
     def forward(self, x):
-        x0 = self.Conv1(x)
+        a = self.Conv1(x)
         
-        x1 = self.pool(x0)
-        x1 = self.Conv2(x1)
+        b = self.pool(a)
+        b = self.Conv2(b)
         
-        x2 = self.pool(x1)
-        x2 = self.Conv3(x2)
+        c = self.pool(b)
+        c = self.Conv3(c)
         
-        x3 = self.pool(x2)
-        x3 = self.Conv4(x3)
+        d = self.pool(c)
+        d = self.Conv4(d)
         
-        x_ = self.pool(x3)
+        x_ = self.pool(d)
         x_ = self.Conv5(x_)
         x_ = self.ConvT1(x_)
         
-        x_ = torch.cat((x_, x3), dim=1)
+        d = self.crop(d, x_.size(dim=2))
+        x_ = torch.cat((x_, d), dim=1)
         
         x_ = self.Conv6(x_)
         x_ = self.ConvT2(x_)
         
-        x_ = torch.cat((x_, x2), dim=1)
+        c = self.crop(c, x_.size(dim=2))
+        x_ = torch.cat((x_, c), dim=1)
         
         x_ = self.Conv7(x_)
         x_ = self.ConvT3(x_)
         
-        x_ = torch.cat((x_, x1), dim=1)
+        b = self.crop(b, x_.size(dim=2))
+        x_ = torch.cat((x_, b), dim=1)
         
         x_ = self.Conv8(x_)
         x_ = self.ConvT4(x_)
         
-        x_ = torch.cat((x_, x0), dim=1)
+        a = self.crop(a, x_.size(dim=2))
+        x_ = torch.cat((x_, a), dim=1)
         
         x_ = self.Conv9(x_)
         
